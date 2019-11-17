@@ -9,7 +9,7 @@ tracker model, demonstrating PV panel orientation for both Elevation and
 Azimuth angles (dual-axis). The Sun orientation is achieved through pre-calculated
 solar position data for a specific geographic location and time (scheduled).
 
-<img src="C:\projects\git\suntracker2-r4\img\20191112 suntracker2r4 design.jpg" width="400px">
+<img src="img/20191112 suntracker2r4 design.jpg" width="400px">
 
 Working under space, cost and time constraints, this prototype model is the
 follow-up project to SunTracker2 Revision 3.
@@ -52,6 +52,10 @@ Two NEMA stepper motors align the solar panel model with the sun.
 ### Mainboard and Displayboard connected
 
 <img src="img/s2r4 displayboard v2.1b 05.jpg" width="800px">
+
+### Device Assembly
+
+<img src="img/s2r4 device 01.jpg" width="800px">
 
 
 
