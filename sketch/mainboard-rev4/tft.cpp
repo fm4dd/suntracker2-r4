@@ -27,12 +27,19 @@ void Display::enable() {
   /* ------------------------------------------------- */
   /* Enable TFT display, clear screen, set black bgnd  */
   /* ------------------------------------------------- */
-  tft.begin(12000000);
+  tft.begin(24000000);
   /* ------------------------------------------------- */
   /* Orientation: 0=vert, 1=hor, 2=vert inv, 3=hor inv */
   /* ------------------------------------------------- */
-  tft.setRotation(3); 
+  tft.setRotation(3);
   u8g2_tft.begin(tft);
+  tft.fillScreen(ILI9341_BLACK);
+}
+
+/* ---------------------------------------------------- */
+/* header() draws logo+text from 0,0px until 320,70px   */
+/* ---------------------------------------------------- */
+void Display::header() {
   tft.fillScreen(ILI9341_BLACK);
   tft.drawBitmap(0, 0, arduinoLogo, 120, 60, 0x3536);
   tft.drawLine(0, 70, 319, 70, ILI9341_GREEN);
@@ -43,6 +50,18 @@ void Display::enable() {
   u8g2_tft.setFont(u8g2_font_6x12_mr);
   u8g2_tft.drawStr(130,62, prgver);
   u8g2_tft.setFont(u8g2_font_t0_17_mr);
+}
+
+void Display::show_ver() {
+  char *line = "Suntracker2 R4";
+  u8g2_tft.setForegroundColor(0xfce0);     // amber
+  u8g2_tft.setFont(u8g2_font_inb21_mr);
+  //u8g2_tft.setFontMode(1); // transparent background
+  tft.fillRect(0, 190, 320, 50, 0x0);
+  u8g2_tft.drawStr(20,218, line);
+  u8g2_tft.setFont(u8g2_font_t0_17_mr);
+  u8g2_tft.drawStr(70,236, prgver);
+  //u8g2_tft.setFontMode(0);
 }
 
 /* ---------------------------------------------------- */
@@ -266,4 +285,94 @@ void Display::fmtNumber(float num, int len, int prec, char *buf) {
   for (int i = 0; i < len+1; i++) {
     if (buf[i]==' ') buf[i]='0';
   }
+}
+
+// Drawing speed, 20 is meant to be the best,
+// can go up to 60, just uses a lot of RAM.
+#define BUFFPIXEL 40
+
+void Display::bmpDraw(char *filename, uint8_t x, uint16_t y) {
+  File     bmpFile;
+  int      bmpWidth, bmpHeight;   
+  uint8_t  bmpDepth;              
+  uint32_t bmpImageoffset;        
+  uint32_t rowSize;               
+  uint8_t  sdbuffer[3*BUFFPIXEL]; 
+  uint8_t  buffidx = sizeof(sdbuffer); 
+  boolean  goodBmp = false;       
+  boolean  flip    = true;        
+  int      w, h, row, col;
+  uint8_t  r, g, b;
+  uint32_t pos = 0, startTime = millis();
+  SD.begin(SDCARD_SS_PIN);
+  bmpFile = SD.open(filename);
+  
+  if(read16(bmpFile) == 0x4D42) { 
+    read32(bmpFile);
+    (void)read32(bmpFile); 
+    bmpImageoffset = read32(bmpFile); 
+    bmpImageoffset, DEC;
+    read32(bmpFile);
+    bmpWidth  = read32(bmpFile);
+    bmpHeight = read32(bmpFile);
+    if(read16(bmpFile) == 1) {
+      bmpDepth = read16(bmpFile);
+      if((bmpDepth == 24) && (read32(bmpFile) == 0)) {
+
+        goodBmp = true;
+        rowSize = (bmpWidth * 3 + 3) & ~3;
+
+        if(bmpHeight < 0) {
+          bmpHeight = -bmpHeight;
+          flip      = false;
+        }
+        w = bmpWidth;
+        h = bmpHeight;
+        if((x+w-1) >= tft.width())  w = tft.width()  - x;
+        if((y+h-1) >= tft.height()) h = tft.height() - y;
+        tft.setAddrWindow(x, y, x+w-1, y+h-1);
+        for (row=0; row<h; row++) { 
+          if(flip) 
+            pos = bmpImageoffset + (bmpHeight - 1 - row) * rowSize;
+          else     
+            pos = bmpImageoffset + row * rowSize;
+          if(bmpFile.position() != pos) {
+            bmpFile.seek(pos);
+            buffidx = sizeof(sdbuffer);
+          }
+
+          for (col=0; col<w; col++) {
+            if (buffidx >= sizeof(sdbuffer)) {
+              bmpFile.read(sdbuffer, sizeof(sdbuffer));
+              buffidx = 0; 
+            }
+
+       
+            b = sdbuffer[buffidx++];
+            g = sdbuffer[buffidx++];
+            r = sdbuffer[buffidx++];
+            tft.pushColor(tft.color565(r,g,b));
+          } 
+        } 
+      } 
+    }
+  }
+
+  bmpFile.close();
+}
+
+uint16_t Display::read16(File &f) {
+  uint16_t result;
+  ((uint8_t *)&result)[0] = f.read(); 
+  ((uint8_t *)&result)[1] = f.read(); 
+  return result;
+}
+
+uint32_t Display::read32(File &f) {
+  uint32_t result;
+  ((uint8_t *)&result)[0] = f.read(); 
+  ((uint8_t *)&result)[1] = f.read();
+  ((uint8_t *)&result)[2] = f.read();
+  ((uint8_t *)&result)[3] = f.read(); 
+  return result;
 }

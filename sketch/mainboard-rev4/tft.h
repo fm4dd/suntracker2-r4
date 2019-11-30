@@ -11,10 +11,13 @@
 /* ---------------------------------------------------- */
 #define TFT_DC 0
 #define TFT_CS 1
+#define TFT_BL 18
 
 class Display {
   public:
     void enable();
+    void header();
+    void show_ver();
     void opmode(uint8_t);
     void wipe();
     void daysymbol();
@@ -29,6 +32,9 @@ class Display {
     void show_date();
     void show_rise_set();
     void show_transit();
+    void bmpDraw(char*, uint8_t, uint16_t);
   private:
     void fmtNumber(float, int, int, char*);
+    uint16_t read16(File&);
+    uint32_t read32(File&);
 };

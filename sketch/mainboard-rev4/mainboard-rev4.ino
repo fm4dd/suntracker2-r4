@@ -49,9 +49,16 @@ void setup() {
   /* ------------------------------------------------- */
   /* Enable TFT display, clear screen, set black bgnd  */
   /* ------------------------------------------------- */
+  digitalWrite(TFT_BL, LOW);  // Set LOW before OUTPUT
+  pinMode(TFT_BL, OUTPUT);    // to prevent screen on
   display.enable();
+  digitalWrite(TFT_BL, HIGH);
+  display.bmpDraw("S2R4IMG.BMP", 0, 0);
+  display.show_ver();
+  delay(8000);
+  display.header();
   display.opmode(opmode);
-  delay(2000);
+  delay(1000);
   /* ------------------------------------------------- */
   /* Set dipswitch GPIO ports as input                 */
   /* ------------------------------------------------- */
@@ -82,7 +89,7 @@ void setup() {
   /* Pushbutton 2 at boot sets testmode. 1 = extended  */
   /* ------------------------------------------------- */
   if(testmode == 1) {
-    u8g2_tft.drawStr(0, 80, "Modules Test:");
+    u8g2_tft.drawStr(0, 100, "Modules Test:");
     /* ------------------------------------------------- */
     /* Identify I2C devices                              */
     /* 0x19 = LSM303DLHC Accel (Adafruit product: 1120)  */
@@ -96,6 +103,7 @@ void setup() {
     byte addr[size] = { 0x1D, 0x1E, 0x20, 0x21, 0x22, 0x23, 
                         0x24, 0x25, 0x26, 0x27, 0x42, 0x68 };
     int i;
+    int line = 100;
     byte error;
     for(i = 0; i<size; i++ ) {
       /* ------------------------------------------------- */
@@ -103,21 +111,26 @@ void setup() {
       /* return value to see if device exists at the addr  */
       /* ------------------------------------------------- */
       snprintf(lineStr, sizeof(lineStr), "I2C check %02x: ", addr[i]);
-      u8g2_tft.drawStr(0, 100+(i*20), lineStr);
+      line = line + 20;
+      if (line > 239) {
+        display.wipe();
+        line = 100; 
+      }
+      u8g2_tft.drawStr(0, line, lineStr);
       Wire.beginTransmission(addr[i]);
       error = Wire.endTransmission();
 
       if (error == 0){
         snprintf(lineStr, sizeof(lineStr), "%02x Response OK", addr[i]);
-        u8g2_tft.drawStr(150, 100+(i*20), lineStr);
+        u8g2_tft.drawStr(150, line, lineStr);
       }
       else if (error==4) {
         snprintf(lineStr, sizeof(lineStr), "%02x Error      ", addr[i]);
-        u8g2_tft.drawStr(150, 100+(i*20), lineStr);
+        u8g2_tft.drawStr(150, line, lineStr);
       }
       else {
         snprintf(lineStr, sizeof(lineStr), "%02x Not Found  ", addr[i]);
-        u8g2_tft.drawStr(150, 100+(i*20), lineStr);
+        u8g2_tft.drawStr(150, line, lineStr);
       }
       delay(1000);
     }
@@ -306,7 +319,7 @@ void setup() {
   else
     u8g2_tft.drawStr(150, 240, "I2C 0x20-25 ERR");
   delay(500);
-
+  display.wipe();
   /* ------------------------------------------------- */
   /* 2nd dip switch enables the motor function, LOW=ON */
   /* ------------------------------------------------- */
@@ -315,11 +328,11 @@ void setup() {
     /* ----------------------------------------------- */
     /* Motor1 testing                                  */
     /* ----------------------------------------------- */
-    u8g2_tft.drawStr(0, 47, "Test Stepper-1");
-    u8g2_tft.drawStr(0, 63, "              ");
+    u8g2_tft.drawStr(0, 100, "Test Stepper-1:");
     amotor.sethome(FAST); /* bring motor home if reqrd */
+    delay(500);
     amotor.demoturn(2);   /* test motor for 2x times   */
-    u8g2_tft.drawStr(0, 63, "Complete");
+    u8g2_tft.drawStr(150, 100, "Complete");
     delay(1000);
     m1cpos = 0;    /* Set motor1 current position = D1 */
     m1tpos = 0;    /* Set motor1 target position = D1  */
@@ -345,7 +358,7 @@ void setup() {
     display.opmode(opmode);
     demo.run();
   }
-  delay(4000);
+  delay(3000);
   /* ------------------------------------------------- */
   /* Intitialize azimuth/elevation position from file  */
   /* ------------------------------------------------- */
