@@ -39,6 +39,7 @@
 extern ledRow row;
 extern ledRing ring;
 extern AMotor amotor;
+extern ZMotor zmotor;
 extern Adafruit_ILI9341 tft;
 extern U8G2_FOR_ADAFRUIT_GFX u8g2_tft;
 extern Display display;
@@ -114,7 +115,10 @@ extern uint8_t dippos1;         // dipswitch 1 position (extra tests)
 extern uint8_t dippos2;         // dipswitch 2 position (motor enable)
 extern uint16_t m1cpos;         // stepper motor-1 current step position (0..1599)
 extern uint16_t m1tpos;         // stepper motor-1 target step position (0..1599)
+extern uint16_t m2cpos;         // stepper motor-1 current step position (0..640)
+extern uint16_t m2tpos;         // stepper motor-1 target step position (0..640)
 extern boolean m1move;          // stepper motor-1 "move in progress" flag
+extern boolean m2move;          // stepper motor-2 "move in progress" flag
 extern uint8_t opmode;          // operations mode: 0 = normal, 1 = demo
 extern uint8_t testmode;        // selftest mode: 0 = normal, 2 = extended
 //extern uint16_t day_azi[1440];  // daily azimuth angle 0..360, 1min interval, 2.88KB

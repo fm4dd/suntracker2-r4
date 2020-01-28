@@ -46,7 +46,10 @@ uint8_t dippos1 = 0;         // dipswitch 1 position (extra tests)
 uint8_t dippos2 = 0;         // dipswitch 2 position (motor enable)
 uint16_t m1cpos = 0;         // stepper motor-1 current step position (0..1599)
 uint16_t m1tpos = 0;         // stepper motor-1 target step position (0..1599)
+uint16_t m2cpos = 0;         // stepper motor-2 current step position (0..640)
+uint16_t m2tpos = 0;         // stepper motor-2 target step position (0..640)
 boolean m1move = false;      // stepper motor-1 "move in progress" flag
+boolean m2move = false;      // stepper motor-2 "move in progress" flag
 uint8_t opmode = 0;          // operations mode: 0=init, 1=track, 2=demo, 3=setup
 uint8_t testmode = 0;        // selftest mode: 0 = normal, 2 = extended
 float day_azi[1440];         // daily azimuth angle 0..360, 1min interval, 6KB

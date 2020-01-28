@@ -21,7 +21,6 @@ void Demo::run() {
   display.show_date();
   display.show_rise_set();
   display.show_transit();
-    
   while(i < 1440) {
     /* ------------------------------------------------- */
     /* generate and show simulated time                  */
@@ -89,17 +88,21 @@ void Demo::run() {
     if(dippos2 == LOW) {
       if(daylight) {
         if(m1move == false) {
-          m1tpos = round(aled * 33.3);
+          m1tpos = round(aled * 16.65);
+          m2tpos = (uint16_t) round(zenith * 7.12);
           if(m1tpos != m1cpos) {
-            amotor.oneadjust(m1tpos, SLOW);
-           }
+            amotor.adjust(m1tpos, SLOW);
+          }
+          if(m2tpos != m2cpos) {
+            zmotor.adjust(m2tpos, SLOW);
+          }
         }
       }
       else {                /* nightfall, move motor-1 home */
         if(m1move == false) {
           if(m1tpos != 0) { /* are we already parked at D1? */
             m1tpos = 0;     /* set D1 as home until sunrise */
-            amotor.oneadjust(m1tpos, SLOW);
+            amotor.adjust(m1tpos, SLOW);
           }
         }
       }
@@ -109,7 +112,7 @@ void Demo::run() {
     /* ------------------------------------------------- */
     if(dippos2 == LOW) {
       if(m1move == false) {
-        if(digitalRead(PUSH1) == LOW) { amotor.sethome(FAST); }
+        if(digitalRead(PUSH1) == LOW) { amotor.sethome(SLOW); }
         if(digitalRead(PUSH2) == LOW) { amotor.oneled(SLOW); }
       }
     }

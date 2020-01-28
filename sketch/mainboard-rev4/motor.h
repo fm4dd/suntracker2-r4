@@ -8,8 +8,11 @@
 class AMotor {
   public:
     void enable();
+    void poweron();
+    void poweroff();
     void demoturn(uint8_t);
     void oneturn(boolean, int);
+    void adjust(uint16_t, int);
     void oneadjust(uint16_t, int);
     void oneled(int);
     void sethome(int);
@@ -18,7 +21,10 @@ class AMotor {
 class ZMotor {
   public:
     void enable();
-    //void halfturn(uint8_t);
+    void demoturn(uint8_t);
+    void poweron();
+    void poweroff();
+    void adjust(uint16_t, int);
     //void oneadjust(uint16_t, int);
     //void oneled(int);
     //void onehome(int);

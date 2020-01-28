@@ -325,17 +325,20 @@ void setup() {
   /* ------------------------------------------------- */
   if(dippos2 == LOW) {
     amotor.enable();
+    zmotor.enable();
     /* ----------------------------------------------- */
     /* Motor1 testing                                  */
     /* ----------------------------------------------- */
     u8g2_tft.drawStr(0, 100, "Test Stepper-1:");
-    amotor.sethome(FAST); /* bring motor home if reqrd */
+    amotor.sethome(SLOW); /* bring motor home if reqrd */
     delay(500);
-    amotor.demoturn(2);   /* test motor for 2x times   */
+    zmotor.demoturn(2);   /* test motor for 2x times   */
     u8g2_tft.drawStr(150, 100, "Complete");
     delay(1000);
     m1cpos = 0;    /* Set motor1 current position = D1 */
     m1tpos = 0;    /* Set motor1 target position = D1  */
+    m2cpos = 0;    /* Set motor1 current position = D1 */
+    m2tpos = 0;    /* Set motor1 target position = D1  */
   }
   /* ------------------------------------------------- */
   /* Read sunrise sunset time from SRS-<YYYY>.BIN file */
@@ -487,9 +490,13 @@ void loop() {
   if(dippos2 == LOW) {
     if(daylight) {
       if(m1move == false) {
-        m1tpos = aled * 34;
+        m1tpos = round(aled * 16.65);
+        m2tpos = (uint16_t) round(zenith * 7.12);
         if(m1tpos != m1cpos) {
-          amotor.oneadjust(m1tpos, SLOW);
+          amotor.adjust(m1tpos, SLOW);
+        }
+        if(m2tpos != m2cpos) {
+          zmotor.adjust(m2tpos, SLOW);
         }
       }
     }
@@ -497,7 +504,7 @@ void loop() {
       if(m1move == false) {
         if(m1tpos != 0) { /* are we already parked at D1? */
           m1tpos = 0;     /* set D1 as home until sunrise */
-          amotor.oneadjust(m1tpos, SLOW);
+          amotor.adjust(m1tpos, SLOW);
         }
       }
     }
@@ -507,7 +514,7 @@ void loop() {
   /* ------------------------------------------------- */
   if(dippos2 == LOW) {
     if(m1move == false) {
-      if(digitalRead(PUSH1) == LOW) { amotor.sethome(FAST); }
+      if(digitalRead(PUSH1) == LOW) { amotor.sethome(SLOW); }
       if(digitalRead(PUSH2) == LOW) { amotor.oneled(SLOW); }
     }
   }
