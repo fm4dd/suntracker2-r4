@@ -1,8 +1,8 @@
 /* ---------------------------------------------------- *
- * Suntracker2  mainboard-rev4 led.cpp   2019-10 @FM4DD *
+ * Suntracker2 mainboard-rev4 motora.cpp 2019-10 @FM4DD *
  *                                                      *
- * This file has the functions to control the stepper   *
- * motors. one=azimuth = improve naming!!!              *
+ * This file has the functions to control the Azimuth   *
+ * axis stepper motor.                                  *
  * ---------------------------------------------------- */
 #include <Arduino.h>           // Arduino default library
 #include "globals.h"           // global variable definitions
@@ -32,12 +32,12 @@ void AMotor::demoturn(uint8_t count) {
   digitalWrite(ENA1,LOW); /* Enable stepstick1 motor driver */
   for(uint8_t turn = 0; turn < count; turn++) {
     digitalWrite(DIR1,HIGH); /* clockwise motor direction    */
-    for(float x = 0; x < 1600; x++) { /* 1600 steps = 1 turn */
+    for(float x = 0; x < 800; x++) { /* 1600 steps = 1 turn */
       digitalWrite(STEP1,HIGH); 
-      delayMicroseconds(500); 
+      delayMicroseconds(SLOW); 
       digitalWrite(STEP1,LOW); 
-      delayMicroseconds(500);
-      mled = (int) round(x / 34); /* 1600/47=34, round to int */ 
+      delayMicroseconds(SLOW);
+      mled = (int) round(x / 17); /* 1600/47=34, round to int */ 
       if (mled != oldmled) {
         if(oldmled < 16) mcp1.digitalWrite(oldmled, LOW);
         else if(oldmled < 32) mcp2.digitalWrite((oldmled-16), LOW);
@@ -54,12 +54,12 @@ void AMotor::demoturn(uint8_t count) {
     delay(1000);                /* Wait for one second delay */
     oldmled = 0;                /* Reset the old LED value   */
     digitalWrite(DIR1 ,LOW);     /* Set dir counterclockwise */
-    for(double x = 1599; x >= 0; x--) { /* 1599..0 steps 1 turn */
+    for(double x = 799; x >= 0; x--) { /* 1599..0 steps 1 turn */
       digitalWrite(STEP1, HIGH);
-      delayMicroseconds(500);
+      delayMicroseconds(SLOW);
       digitalWrite(STEP1, LOW);
-      delayMicroseconds(500);
-      mled = round(x / 34); /* 1600/48=33.3, round to int  */
+      delayMicroseconds(SLOW);
+      mled = round(x / 17); /* 1600/48=33.3, round to int  */
       if (mled != oldmled) {
         if(oldmled < 16) mcp1.digitalWrite(oldmled, LOW);
         else if(oldmled < 32) mcp2.digitalWrite((oldmled-16), LOW);
@@ -86,7 +86,7 @@ void AMotor::demoturn(uint8_t count) {
 void AMotor::oneturn(boolean direction, int speed) {
   digitalWrite(ENA1,LOW); /* Enable stepstick1 motor driver */
   digitalWrite(DIR1,direction); /* HIGH=clockwise, LOW=CCW  */
-  for(float x = 0; x < 1600; x++) { /* 1600 steps = 1turn */
+  for(float x = 0; x < 800; x++) { /* 1600 steps = 1turn */
     digitalWrite(STEP1,HIGH); 
     delayMicroseconds(speed); 
     digitalWrite(STEP1,LOW); 
@@ -96,31 +96,31 @@ void AMotor::oneturn(boolean direction, int speed) {
 }
 
 /* ---------------------------------------------------- */
-/* oneadjust moves from the current position            */
-/* to the target position. position range 0..1600       */
+/* adjust moves from the current position towards the   */
+/* target position in one go. position range 0..1600    */
 /* ---------------------------------------------------- */
-void AMotor::oneadjust(uint16_t target, int speed) {
+void AMotor::adjust(uint16_t target, int speed) {
   uint16_t steps = 0;
   m1move = true;
   digitalWrite(ENA1,LOW); /* Enable stepstick1 motor driver */
   if(m1cpos < m1tpos) {
-    if(abs(m1cpos - m1tpos) < 800) {
+    if(abs(m1cpos - m1tpos) < 400) {
       digitalWrite(DIR1,HIGH); /* run clockwise motor direction */
       steps = m1tpos - m1cpos; /* get required steps to target  */
     }
     else {                    /* the other way around is shorter */
       digitalWrite(DIR1,LOW); /* move counterclockwise direction */
-      steps = 1600 - m1tpos + m1cpos;
+      steps = 400 - m1tpos + m1cpos;
     }
   }
   else {
-    if((m1cpos - m1tpos) < 800) {
+    if((m1cpos - m1tpos) < 400) {
       digitalWrite(DIR1,LOW); /* counterclockwise  direction  */
       steps = m1cpos - m1tpos;
     }
     else {                     /* the other way around is shorter */
       digitalWrite(DIR1,HIGH); /* run clockwise motor direction   */
-      steps = 1600 - m1cpos + m1tpos;      
+      steps = 800 - m1cpos + m1tpos;      
     }
   }
   for(int x = 0; x < steps; x++) {
@@ -129,9 +129,64 @@ void AMotor::oneadjust(uint16_t target, int speed) {
       digitalWrite(STEP1,LOW); 
       delayMicroseconds(speed);
   }
-  digitalWrite(ENA1,HIGH); /* Disable stepstick1 motordriver */
+  //digitalWrite(ENA1,HIGH); /* Disable stepstick1 motordriver */
   m1move = false;
   m1cpos = m1tpos;
+}
+
+/* ---------------------------------------------------- */
+/* poweron enables the stepstick controller and sets    */
+/* the motor move variabe m1move to 'true'.             */
+/* ---------------------------------------------------- */
+void AMotor::poweron() {
+  if(digitalRead(ENA1) == HIGH) {
+    digitalWrite(ENA1,LOW); /* Enable stepstick1 motor driver */
+    m1move = true;
+  }
+}
+
+/* ---------------------------------------------------- */
+/* poweroff enables the stepstick controller and sets   */
+/* the motor move variabe m1move to 'false'.            */
+/* ---------------------------------------------------- */
+void AMotor::poweroff() {
+  if(digitalRead(ENA1) == LOW) {
+    digitalWrite(ENA1,HIGH); /* Disable stepstick1 motor driver */
+    m1move = false;
+  }
+}
+
+/* ---------------------------------------------------- */
+/* oneadjust moves from current position towards target */
+/* position continuously. Needs explicit 'motor enable' */
+/* the motor position range is 0..1600                  */
+/* ---------------------------------------------------- */
+void AMotor::oneadjust(uint16_t target, int speed) {
+  if(m1cpos < m1tpos) {
+    if(abs(m1cpos - m1tpos) < 400) {
+      digitalWrite(DIR1,HIGH); /* run clockwise motor direction */
+      m1cpos++;
+    }
+    else {                    /* the other way around is shorter */
+      digitalWrite(DIR1,LOW); /* move counterclockwise direction */
+      m1cpos--;
+    }
+  }
+  else {
+    if((m1cpos - m1tpos) < 400) {
+      digitalWrite(DIR1,LOW); /* counterclockwise  direction  */
+      m1cpos--;
+    }
+    else {                     /* the other way around is shorter */
+      digitalWrite(DIR1,HIGH); /* run clockwise motor direction   */
+      m1cpos++;  
+    }
+  }
+  /* execute one single step */
+  digitalWrite(STEP1,HIGH);
+  delayMicroseconds(speed);
+  digitalWrite(STEP1,LOW); 
+  delayMicroseconds(speed);
 }
 
 /* ---------------------------------------------------- */
@@ -140,7 +195,7 @@ void AMotor::oneadjust(uint16_t target, int speed) {
 /* 500 = fast, 5000 = slow                              */
 /* ---------------------------------------------------- */
 void AMotor::oneled(int speed) {
-  uint16_t steps = 34;
+  uint16_t steps = 17; // 1/8 = 34, 14 = 17
   m1move = true;
   digitalWrite(ENA1,LOW); /* Enable stepstick1 motordriver */
   digitalWrite(DIR1,HIGH); /* clockwise motor direction    */
@@ -152,7 +207,7 @@ void AMotor::oneled(int speed) {
   }
   digitalWrite(ENA1,HIGH); /* Disable stepstick1 motordriver */
   m1move = false;
-  m1cpos = m1cpos + 34;
+  m1cpos = m1cpos + 17;
 }
 
 /* ---------------------------------------------------- */
@@ -186,7 +241,7 @@ void AMotor::sethome(int speed) {
   }
   else {                  /* position is not known, go back */
     digitalWrite(DIR1, LOW);  /* counterclockwise direction */
-    for(int x = 0; x < 1610; x++) {
+    for(int x = 0; x < 805; x++) {
       digitalWrite(STEP1,HIGH);
       delayMicroseconds(speed);
       digitalWrite(STEP1,LOW); 
@@ -199,15 +254,4 @@ void AMotor::sethome(int speed) {
       }
     }
   }
-}
-
-void ZMotor::enable() {
-  /* ------------------------------------------------- */
-  /* Set zenith motor control pins as output           */
-  /* ------------------------------------------------- */
-  pinMode(STEP2,OUTPUT); 
-  pinMode(DIR2,OUTPUT);
-  pinMode(ENA2,OUTPUT);
-  pinMode(ESWI2,INPUT);
-  digitalWrite(ENA2,HIGH); // Disable stepstick2
 }

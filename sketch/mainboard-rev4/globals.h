@@ -11,6 +11,7 @@
 #include "led.h"               // LED code Zenith row and displayboard
 #include "tft.h"               // TFT display functions
 #include "motor.h"             // Stepper motor control
+#include "xbee.h"              // XBee radio module control
 /* ------------------------------------------------- */
 /* mainboard pin assignments                         */
 /* ------------------------------------------------- */
@@ -50,13 +51,12 @@ extern SdFile root;
 /* Magnetic field Sensor                             */
 /* ------------------------------------------------- */
 extern LSM303 compass;
-
 /* ------------------------------------------------- */
 /* DS3231 Precision RTC clock                        */
 /* ------------------------------------------------- */
 extern uRTCLib rtc;
 /* ---------------------------------------------------- */
-/* 8x IO Expanders for a total of 128 I/O ports          */
+/* 8x IO Expanders for a total of 128 I/O ports         */
 /* ---------------------------------------------------- */
 extern Adafruit_MCP23017 mcp1;
 extern Adafruit_MCP23017 mcp2;

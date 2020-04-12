@@ -1,7 +1,7 @@
 #include <Arduino.h>          // Arduino default library
 #include "globals.h"
 
-const PROGMEM char prgver[] = "Version 20191130-01";
+const PROGMEM char prgver[] = "Version 20200412-01";
 int8_t eled = 0;             // elevation LED (green)
 int8_t oldeled = 17;         // 17 > max value 15, indicates "init"
 int8_t tled = 0;             // max elevation (transit) LED (red)

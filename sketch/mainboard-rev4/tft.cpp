@@ -107,7 +107,7 @@ void Display::opmode(uint8_t mode) {
 /* clear() cleans the display below logo line at 70px   */
 /* ---------------------------------------------------- */
 void Display::wipe() {
-    tft.fillRect(0, 80, 320, 160, 0x0);
+    tft.fillRect(0, 78, 320, 162, 0x0);
 }
 
 void Display::daysymbol() {

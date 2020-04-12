@@ -32,6 +32,7 @@ SdVolume volume;          // SD partition
 SdFile root;              // SD filesystem
 LSM303 compass;           // Magnetic field Sensor
 uRTCLib rtc;              // DS3231 Precision RTC clock
+XBee xbee;                // XBee S2C wireless comms
 /* ------------------------------------------------- */
 /* DEBUG enables debug output to the serial monitor  */
 /* ------------------------------------------------- */
@@ -140,35 +141,35 @@ void setup() {
   /* ------------------------------------------------- */
   /* Enable the SD card module                         */
   /* ------------------------------------------------- */
-  u8g2_tft.drawStr(0, 100, "Init SD card:");
+  u8g2_tft.drawStr(0, 93, "Init SD card:");
   if (!card.init(SPI_HALF_SPEED, SDCARD_SS_PIN)) {
-    u8g2_tft.drawStr(150, 80, "SD card FAIL  ");
+    u8g2_tft.drawStr(150, 93, "SD card FAIL  ");
     while(1);
   } else {
     switch (card.type()) {
       case SD_CARD_TYPE_SD1:
         Serial.println("SD1");
-        u8g2_tft.drawStr(150, 100, "SD1 card OK   ");
+        u8g2_tft.drawStr(150, 93, "SD1 card OK   ");
         break;
       case SD_CARD_TYPE_SD2:
-        u8g2_tft.drawStr(150, 100, "SD2 card OK   ");
+        u8g2_tft.drawStr(150, 93, "SD2 card OK   ");
         break;
       case SD_CARD_TYPE_SDHC:
-        u8g2_tft.drawStr(150, 100, "SDHC card OK  ");
+        u8g2_tft.drawStr(150, 93, "SDHC card OK  ");
         break;
       default:
-        u8g2_tft.drawStr(150, 100, "Unknown card  ");
+        u8g2_tft.drawStr(150, 93, "Unknown card  ");
     }
   }
   SD.begin(SDCARD_SS_PIN); 
   delay(500);
-  u8g2_tft.drawStr(150, 100, "Read file dset.txt.");
+  u8g2_tft.drawStr(150, 93, "Read file dset.txt.");
   File dset = SD.open("DSET.TXT");
   int i = 0;
   if(dset) {
     unsigned long fsize = dset.size();
     snprintf(lineStr, sizeof(lineStr), "DSET.TXT %ld bytes OK", fsize);
-    u8g2_tft.drawStr(150, 100, lineStr);
+    u8g2_tft.drawStr(150, 93, lineStr);
     delay(2000);
 //while (dset.available()) {
 //        dset.readStringUntil(':').toCharArray(lineStr,15);
@@ -180,13 +181,13 @@ void setup() {
 //        i++;
 //      }
     } else {
-      u8g2_tft.drawStr(150, 100, "Fail open dset.txt");
+      u8g2_tft.drawStr(150, 93, "Fail open dset.txt");
     }
     dset.close();
   /* ------------------------------------------------- */
   /* Enable the DS3231 RTC clock module                */
   /* ------------------------------------------------- */
-  u8g2_tft.drawStr(0, 120, "Init DS3231:");
+  u8g2_tft.drawStr(0, 111, "Init DS3231:");
   Wire.beginTransmission(0x68);
   if (Wire.endTransmission() == 0) {
     rtc.set_rtc_address(0x68);
@@ -203,7 +204,7 @@ void setup() {
   else {
     snprintf(lineStr, sizeof(lineStr), "No RTC I2C 0x68");
   }
-  u8g2_tft.drawStr(150, 120, lineStr);
+  u8g2_tft.drawStr(150, 111, lineStr);
   delay(1500);
   /* ------------------------------------------------- */
   /* Enable the LSM303 Compass sensor module           */
@@ -214,12 +215,12 @@ void setup() {
   /* init() without args tries to determine chip type  */
   /* ------------------------------------------------- */
   boolean mag_found = false;
-  u8g2_tft.drawStr(0, 140, "Init Compass:");
+  u8g2_tft.drawStr(0, 129, "Init Compass:");
   mag_found = compass.init();
   if(mag_found) {
-    if(compass.getDeviceType() == 3) u8g2_tft.drawStr(150, 140, "SH MM-TXS05");
+    if(compass.getDeviceType() == 3) u8g2_tft.drawStr(150, 129, "SH MM-TXS05");
     else 
-      if(compass.getDeviceType() == 2) u8g2_tft.drawStr(150, 140, "ADA-LSM303");
+      if(compass.getDeviceType() == 2) u8g2_tft.drawStr(150, 129, "ADA-LSM303");
     compass.enableDefault();
     /* ------------------------------------------------- */
     /* LSM303D Calibration values, see Calibrate example */
@@ -229,7 +230,7 @@ void setup() {
     // Board 2 - Adafruit SLM303DLHC
     compass.m_min = (LSM303::vector<int16_t>){-595, -511, -445};
     compass.m_max = (LSM303::vector<int16_t>){+589, +597, +573};
-    u8g2_tft.drawStr(257, 140, "Init OK");
+    u8g2_tft.drawStr(257, 129, "Init OK");
     /* ------------------------------------------------- */
     /* Aquire compass sensor data                        */
     /* ------------------------------------------------- */
@@ -241,16 +242,16 @@ void setup() {
     /* print North heading to TFT                        */
     /* ------------------------------------------------- */
     dtostrf(heading,6,4,lineStr);
-    u8g2_tft.drawStr(257,140, lineStr);
+    u8g2_tft.drawStr(257,129, lineStr);
   }
   else {
-    u8g2_tft.drawStr(150, 140, "LSM303 Not Found!");
+    u8g2_tft.drawStr(150, 129, "LSM303 Not Found!");
   }
   delay(1500);
   /* ------------------------------------------------- */
-  /* Enable MKRGPS with serial protocol                */
+  /* Enable MKRGPS with I2C DDC protocol               */
   /* ------------------------------------------------- */
-  u8g2_tft.drawStr(0, 160, "Init GPS I2C:");
+  u8g2_tft.drawStr(0, 147, "Init GPS I2C:");
   Wire.beginTransmission(0x42);
   if (Wire.endTransmission() == 0) {
     GPS.begin(GPS_MODE_I2C);
@@ -269,56 +270,71 @@ void setup() {
     char lonStr[16];
     String(longitude, 8).toCharArray(lonStr, 8);
     snprintf(lineStr, sizeof(lineStr), "%d Satellites", satellites);
-    u8g2_tft.drawStr(150, 160, lineStr);
+    u8g2_tft.drawStr(150, 147, lineStr);
     snprintf(lineStr, sizeof(lineStr), "LAT: %s", latStr);
-    u8g2_tft.drawStr(0, 180, lineStr);
+    u8g2_tft.drawStr(0, 165, lineStr);
     snprintf(lineStr, sizeof(lineStr), "LON: %s", lonStr);
-    u8g2_tft.drawStr(150, 180, lineStr);
+    u8g2_tft.drawStr(150, 165, lineStr);
   }
   else {
-    u8g2_tft.drawStr(150, 160, "No GPS Shield 0x42");
+    u8g2_tft.drawStr(150, 147, "No GPS Shield 0x42");
   }
   delay(500);
   /* ------------------------------------------------- */
+  /* Test XBee S2C wireless commuication module        */
+  /* ------------------------------------------------- */
+  u8g2_tft.drawStr(0, 183, "Init XBee S2C:");
+  if(xbee.enable() == true) {
+    u8g2_tft.drawStr(150, 183, "Module OK ");
+    if(xbee.getstatus() == true) {
+      if(xbee.getassociation() == 0)
+        snprintf(lineStr, sizeof(lineStr),
+          "Network %d ONLINE", xbee.getoper_panid());
+      u8g2_tft.drawStr(150, 183, lineStr);
+    }
+  }
+  else
+    u8g2_tft.drawStr(150, 183, "Module N/A");
+  /* ------------------------------------------------- */
   /* Test mainboard zenith row IO expanders            */
   /* ------------------------------------------------- */
-  u8g2_tft.drawStr(0, 200, "Init LED Row:");
+  u8g2_tft.drawStr(0, 201, "Init LED Row:");
   if(row.enable() == 0) {
-    u8g2_tft.drawStr(150, 200, "I2C 0x26/27 OK ");
+    u8g2_tft.drawStr(150, 201, "I2C 0x26/27 OK ");
     /* ----------------------------------------------- */
     /* Test LED row                                    */
     /* ----------------------------------------------- */
-    u8g2_tft.drawStr(0, 220, "Test LED Row: ");
+    u8g2_tft.drawStr(0, 219, "Test LED Row: ");
     delay(500);
-    u8g2_tft.drawStr(150, 220, "Zenith Row RED  ");
+    u8g2_tft.drawStr(150, 219, "Zenith Row RED  ");
     row.stepled_red(50);
-    u8g2_tft.drawStr(150, 220, "Zenith Row GREEN");
+    u8g2_tft.drawStr(150, 219, "Zenith Row GREEN");
     row.stepled_green(50);
-    u8g2_tft.drawStr(150, 220, "Zenith Row ALL  ");
+    u8g2_tft.drawStr(150, 219, "Zenith Row ALL  ");
     row.lightcheck();
-    u8g2_tft.drawStr(150, 220, "Zenit Row done  ");
+    u8g2_tft.drawStr(150, 219, "Zenit Row done  ");
   }
   else
-    u8g2_tft.drawStr(150, 200, "I2C 0x26/27 ERR");
+    u8g2_tft.drawStr(150, 201, "I2C 0x26/27 ERR");
   delay(500);
   
   /* ------------------------------------------------- */
   /* Test if displayboard is connected                 */
   /* ------------------------------------------------- */
-  u8g2_tft.drawStr(0, 240, "Init LED Ring:");
+  u8g2_tft.drawStr(0, 237, "Init LED Ring:");
   if(ring.enable() == 0) {
-    u8g2_tft.drawStr(150, 240, "I2C 0x20-25 OK ");
+    u8g2_tft.drawStr(150, 237, "I2C 0x20-25 OK ");
     /* ----------------------------------------------- */
     /* Test LED ring                                   */
     /* ----------------------------------------------- */
-    u8g2_tft.drawStr(0, 240, "Test LED Ring:");
-    u8g2_tft.drawStr(150, 240, "                ");
-    u8g2_tft.drawStr(150, 240, "Lightshow ON"); 
+    u8g2_tft.drawStr(0, 237, "Test LED Ring:");
+    u8g2_tft.drawStr(150, 237, "                ");
+    u8g2_tft.drawStr(150, 237, "Lightshow ON"); 
     ring.lightshow(40);
   }
   else
-    u8g2_tft.drawStr(150, 240, "I2C 0x20-25 ERR");
-  delay(500);
+    u8g2_tft.drawStr(150, 237, "I2C 0x20-25 ERR");
+  delay(3500);
   display.wipe();
   /* ------------------------------------------------- */
   /* 2nd dip switch enables the motor function, LOW=ON */
