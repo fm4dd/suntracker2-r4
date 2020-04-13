@@ -1,5 +1,7 @@
 # mainboard-rev4 sketch compilation
 
+![test](https://github.com/fm4dd/suntracker2-r4/workflows/test/badge.svg)
+
 ```
 Sketch uses 100056 bytes (38%) of program storage space. Maximum is 262144 bytes.
 Global variables use 16600 bytes of dynamic memory.
